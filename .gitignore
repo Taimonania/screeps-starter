@@ -1,3 +1,4 @@
 node_modules/
 alex/
 .DS_Store
+dist/

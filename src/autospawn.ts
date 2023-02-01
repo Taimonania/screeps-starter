@@ -1,11 +1,15 @@
 function spawnCreep(name: string, role: Role) {
+  if (!Game.spawns["Spawn1"].spawning) return;
   const id = name + Math.floor(Math.random() * 10000);
   const bodyParts = calcBodyParts(550, role);
+  console.log(`Trying to spawn ${role} creep with body parts: ${bodyParts}`, )
   const newCreep = Game.spawns["Spawn1"].spawnCreep(bodyParts, id, {
     memory: { role, upgrading: false, building: false },
   });
   if (newCreep === 0) {
     console.log(`Spawning ${id}.`);
+  } else {
+    console.log(`Error: failed to spawn a new creep. Error code: ${newCreep}`);
   }
 }
 
@@ -19,22 +23,13 @@ function calcBodyParts(maxCosts: number, role: Role, roadOptimized = true) {
   switch(role) {
     case Role.Harvester:
     case Role.Builder:
-      workParts = Math.ceil((numParts - moveParts) / 2);
-      carryParts = numParts - moveParts - workParts;
-      for (let i = 0; i < workParts; i++) {
-        bodyParts.push(WORK);
-      }
-      for (let i = 0; i < carryParts; i++) {
-        bodyParts.push(CARRY);
-      }
-      break;
     case Role.Upgrader:
-      workParts = Math.ceil((numParts - moveParts) / 3);
-      carryParts = numParts - moveParts - workParts;
+      workParts = Math.ceil((numParts - moveParts) / 2)/2;
+      carryParts = numParts - moveParts - workParts*2;
+      break;
   }
   if (numParts < workParts + moveParts + carryParts) {
-    console.log("Not enough body parts in calcBodyParts()");
-    throw new Error("Not enough body parts in calcBodyParts()");
+    console.log("Error: Not enough body parts in calcBodyParts()");
   }
   return pushBodyParts(workParts, carryParts, moveParts, bodyParts);
 }

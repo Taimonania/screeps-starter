@@ -13,6 +13,7 @@ declare interface CreepMemory {
   role: Role;
   upgrading?: boolean;
   building?: boolean;
+  curTarget?: AnyStructure;
 }
 
 module.exports.loop = function () {
