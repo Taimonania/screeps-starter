@@ -1,32 +1,86 @@
-function spawnCreep(name: string, role: Role, job: Job) {
-  const id = name + Game.time;
-  const newCreep = Game.spawns['Spawn1'].spawnCreep([WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE], id, {
-    // const newCreep = Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, CARRY, MOVE, MOVE], id, {
-    memory: { role, job },
+function spawnCreep(name: string, role: Role) {
+  const id = name + Math.floor(Math.random() * 10000);
+  const bodyParts = calcBodyParts(550, role);
+  const newCreep = Game.spawns["Spawn1"].spawnCreep(bodyParts, id, {
+    memory: { role, upgrading: false, building: false },
   });
   if (newCreep === 0) {
     console.log(`Spawning ${id}.`);
   }
 }
 
-module.exports = function autoSpawn({
-  desiredWorkers,
-  desiredUpgraders,
-}: {
-  desiredWorkers: number;
-  desiredUpgraders: number;
-}) {
-  const currentWorkers = _.filter(Game.creeps, creep => {
-    return creep.memory.role === Role.Worker;
-  }).length;
+function calcBodyParts(maxCosts: number, role: Role, roadOptimized = true) {
+  const numParts = maxCosts / 50;
+  const moveFactor = roadOptimized ? 4 : 2;
+  const moveParts = Math.ceil(numParts / moveFactor);
+  let workParts = 0;
+  let carryParts = 0;
+  let bodyParts: BodyPartConstant[] = [];
+  switch(role) {
+    case Role.Harvester:
+    case Role.Builder:
+      workParts = Math.ceil((numParts - moveParts) / 2);
+      carryParts = numParts - moveParts - workParts;
+      for (let i = 0; i < workParts; i++) {
+        bodyParts.push(WORK);
+      }
+      for (let i = 0; i < carryParts; i++) {
+        bodyParts.push(CARRY);
+      }
+      break;
+    case Role.Upgrader:
+      workParts = Math.ceil((numParts - moveParts) / 3);
+      carryParts = numParts - moveParts - workParts;
+  }
+  if (numParts < workParts + moveParts + carryParts) {
+    console.log("Not enough body parts in calcBodyParts()");
+    throw new Error("Not enough body parts in calcBodyParts()");
+  }
+  return pushBodyParts(workParts, carryParts, moveParts, bodyParts);
+}
 
-  if (desiredWorkers > currentWorkers) {
-    return spawnCreep('Worker', Role.Worker, Job.Harvesting);
+function pushBodyParts(numWork: number, numCarry: number, numMove: number, bodyParts: BodyPartConstant[]) {
+  for (let i = 0; i < numWork; i++) {
+    bodyParts.push(WORK);
+  }
+  for (let i = 0; i < numCarry; i++) {
+    bodyParts.push(CARRY);
+  }
+  for (let i = 0; i < numMove; i++) {
+    bodyParts.push(MOVE);
+  }
+  return bodyParts;
+}
+
+module.exports = function autoSpawn({
+  desiredHarvester,
+  desiredUpgrader,
+  desiredBuilder,
+}: {
+  desiredHarvester: number;
+  desiredUpgrader: number;
+  desiredBuilder: number;
+}) {
+  const currentHarvester = _.filter(Game.creeps, (creep) => {
+    return creep.memory.role === Role.Harvester;
+  }).length;
+  if (desiredHarvester > currentHarvester) {
+    return spawnCreep("Harvester", Role.Harvester);
   }
 
-  const currentUpgraders = _.filter(Game.creeps, creep => creep.memory.role === Role.Upgrader).length;
+  const currentUpgrader = _.filter(
+    Game.creeps,
+    (creep) => creep.memory.role === Role.Upgrader
+  ).length;
+  if (desiredUpgrader > currentUpgrader) {
+    return spawnCreep("Upgrader", Role.Upgrader);
+  }
 
-  if (desiredUpgraders > currentUpgraders) {
-    return spawnCreep('Upgrader', Role.Upgrader, Job.Upgrading);
+  const currentBuilder = _.filter(
+    Game.creeps,
+    (creep) => creep.memory.role === Role.Builder
+  ).length;
+  if (desiredBuilder > currentBuilder) {
+    return spawnCreep("Builder", Role.Builder);
   }
 };

@@ -1,61 +1,40 @@
-const roleHarvester = require('role.harvester');
-const roleUpgrader = require('role.upgrader');
-const roleBuilder = require('role.builder');
-const roleTransporter = require('role.transporter');
-const autoSpawn = require('autospawn');
-
-const enum Job {
-  Harvesting = 'Harvesting',
-  Upgrading = 'Upgrading',
-  Building = 'Building',
-  Transporting = 'Transporting',
-}
+const roleHarvester = require("role.harvester");
+const roleUpgrader = require("role.upgrader");
+const roleBuilder = require("role.builder");
+const autoSpawn = require("autospawn");
 
 const enum Role {
-  Worker = 'Worker',
-  Upgrader = 'Upgrader',
+  Harvester = "harvester",
+  Upgrader = "upgrader",
+  Builder = "builder",
 }
 
 declare interface CreepMemory {
   role: Role;
-  job: Job;
+  upgrading?: boolean;
+  building?: boolean;
 }
 
-const desiredWorkers = 7;
-const desiredUpgraders = 2;
-
 module.exports.loop = function () {
-  for (let name in Memory.creeps) {
-    if (!Game.creeps[name]) {
-      delete Memory.creeps[name];
-    }
-  }
+  autoSpawn({ desiredHarvester: 3, desiredUpgrader: 5, desiredBuilder: 3 });
 
-  if (Game.spawns['Spawn1'].spawning === null) {
-    autoSpawn({ desiredWorkers, desiredUpgraders });
-  }
-
-  for (let name in Game.creeps) {
+  for (const name in Game.creeps) {
     const creep = Game.creeps[name];
-    if (creep.store.getUsedCapacity() === 0) {
-      creep.memory.job = Job.Harvesting;
-      creep.say('🌽');
-    }
-
-    if (creep.memory.job === Job.Harvesting) {
+    if (creep.memory.role == Role.Harvester) {
       roleHarvester.run(creep);
     }
-
-    if (creep.memory.job === Job.Transporting) {
-      roleTransporter.run(creep);
-    }
-
-    if (creep.memory.job === Job.Upgrading) {
+    if (creep.memory.role == Role.Upgrader) {
       roleUpgrader.run(creep);
     }
-
-    if (creep.memory.job === Job.Building) {
+    if (creep.memory.role == Role.Builder) {
       roleBuilder.run(creep);
+    }
+  }
+
+  // Automatically delete memory of missing creeps
+  for (const name in Memory.creeps) {
+    if (!(name in Game.creeps)) {
+      delete Memory.creeps[name];
     }
   }
 };
