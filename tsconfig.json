@@ -5,16 +5,14 @@
     "target": "es2018",
     "moduleResolution": "Node",
     "outDir": "dist",
-    "baseUrl": "",
-    "sourceMap": false,
+    "baseUrl": "src",
+    "sourceMap": true,
     "strict": true,
     "experimentalDecorators": true,
     "noImplicitReturns": true,
     "allowSyntheticDefaultImports": true,
-    "allowUnreachableCode": false,
-    "preserveConstEnums": false,
+    "allowUnreachableCode": false
   },
-  "include": ["src/**/*"],
   "exclude": [
     "node_modules"
   ]

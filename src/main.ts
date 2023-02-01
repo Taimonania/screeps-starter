@@ -1,36 +1,38 @@
-const roleHarvester = require("role.harvester");
-const roleUpgrader = require("role.upgrader");
-const roleBuilder = require("role.builder");
-const autoSpawn = require("autospawn");
+import { ErrorMapper } from "utils/ErrorMapper";
 
-const enum Role {
-  Harvester = "harvester",
-  Upgrader = "upgrader",
-  Builder = "builder",
-}
+declare global {
+  /*
+    Example types, expand on these or remove them and add your own.
+    Note: Values, properties defined here do no fully *exist* by this type definiton alone.
+          You must also give them an implemention if you would like to use them. (ex. actually setting a `role` property in a Creeps memory)
 
-declare interface CreepMemory {
-  role: Role;
-  upgrading?: boolean;
-  building?: boolean;
-  curTarget?: AnyStructure;
-}
+    Types added in this `global` block are in an ambient, global context. This is needed because `main.ts` is a module file (uses import or export).
+    Interfaces matching on name from @types/screeps will be merged. This is how you can extend the 'built-in' interfaces from @types/screeps.
+  */
+  // Memory extension samples
+  interface Memory {
+    uuid: number;
+    log: any;
+  }
 
-module.exports.loop = function () {
-  autoSpawn({ desiredHarvester: 3, desiredUpgrader: 5, desiredBuilder: 3 });
+  interface CreepMemory {
+    role: string;
+    room: string;
+    working: boolean;
+  }
 
-  for (const name in Game.creeps) {
-    const creep = Game.creeps[name];
-    if (creep.memory.role == Role.Harvester) {
-      roleHarvester.run(creep);
-    }
-    if (creep.memory.role == Role.Upgrader) {
-      roleUpgrader.run(creep);
-    }
-    if (creep.memory.role == Role.Builder) {
-      roleBuilder.run(creep);
+  // Syntax for adding properties to `global` (ex "global.log")
+  namespace NodeJS {
+    interface Global {
+      log: any;
     }
   }
+}
+
+// When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
+// This utility uses source maps to get the line numbers and file names of the original, TS source code
+export const loop = ErrorMapper.wrapLoop(() => {
+  console.log(`Current game tick is ${Game.time}`);
 
   // Automatically delete memory of missing creeps
   for (const name in Memory.creeps) {
@@ -38,4 +40,4 @@ module.exports.loop = function () {
       delete Memory.creeps[name];
     }
   }
-};
+});
